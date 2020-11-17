@@ -10,20 +10,16 @@ router.post('/register' , async(request, response)=> {
     const data = await User.findOne({ email : email });
     if(data){
         errors.push({msg : 'Email already exists'});
-       return  response.status(500).send({  errors  });
+        return response.status(500).send({  errors  });
     }
+    
+    const hash = await bcrypt.hash(password,10);
+
     const newUser = new User({
         name, 
         email, 
-        password
+        hash
     });
-    await bcrypt.hash(password,10,(err, hash)=> {
-            if (err) throw err;
-            console.log('hashed pass : ',hash);
-            newUser.password = hash;
-            console.log(newUser.password)
-    
-        });
         
         await newUser.save();
         response.send({ msg : 'User is registered '})
@@ -35,7 +31,7 @@ router.post('/login', (request, response) => {
         if (user === null){
             response.status(404)('User does not exist');
         } else {
-            bcrypt.compare(req.body.hash, user.hash, (err, valid) => {
+            bcrypt.compare(req.body.password, user.hash, (err, valid) => {
                 if (err) throw err;
 
                 if (valid) {
