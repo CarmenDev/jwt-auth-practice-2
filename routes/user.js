@@ -35,15 +35,18 @@ router.post('/login', (request, response) => {
             response.status(404)('User does not exist');
         } else {
             bcrypt.compare(request.body.password, user.hash, (err, valid) => {
+
                 if (err) throw err;
 
-                if (valid) {
+                if (!valid) {
                     console.log(request.body);
                     response.status(401).send('Access denied, please log in!')
+                } else {
+                    const token = jwtIssuer(user);
+                    response.send(token);
                 }
             })
-            const token = jwtIssuer(user);
-            response.send(token);
+            
         }
     }).catch((err) => {
         console.log(err);
