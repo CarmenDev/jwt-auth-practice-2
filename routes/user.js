@@ -3,6 +3,7 @@ const app = express();
 const User = require('../UserModel');
 const bcrypt = require('bcrypt');
 const router = express.Router();
+const jwtIssuer = require('../utils/jwtIssuer');
 
 router.post('/register' , async(request, response)=> {
     const { name , email , password}  = request.body;
@@ -26,19 +27,23 @@ router.post('/register' , async(request, response)=> {
 });
 
 router.post('/login', (request, response) => {
-    User.findOne({email: req.body.email})
+    const { email, password } = request.body;
+
+    User.findOne({email: request.body.email})
     .then((user) => {
         if (user === null){
             response.status(404)('User does not exist');
         } else {
-            bcrypt.compare(req.body.password, user.hash, (err, valid) => {
+            bcrypt.compare(request.body.password, user.hash, (err, valid) => {
                 if (err) throw err;
 
                 if (valid) {
-                    console.log(req.body);
-                    res.status(401).send('Access denied, please log in!')
+                    console.log(request.body);
+                    response.status(401).send('Access denied, please log in!')
                 }
             })
+            const token = jwtIssuer(user);
+            response.send(token);
         }
     }).catch((err) => {
         console.log(err);
